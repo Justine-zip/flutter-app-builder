@@ -1,0 +1,65 @@
+name: 'Flutter App Builder'
+description: 'Wraps Flutter environment setup, dependency fetching, and app compilation into a single step'
+branding:
+  icon: 'package'
+  color: 'blue'
+
+inputs:
+  type:
+    description: 'The build type (shorebird, flutter build)'
+    required: true
+    default: 'flutter build'
+  shorebird-command:
+    description: 'The Shorebird command to run if type is shorebird (release, patch)'
+    required: false
+    default: 'release'
+  shorebird-token:
+    description: 'The SHOREBIRD_TOKEN secret required for authentication'
+    required: false
+  target:
+    description: 'The build target (apk, appbundle, ios, web)'
+    required: true
+    default: 'apk'
+  build-mode:
+    description: 'Build mode (release, debug, profile)'
+    required: false
+    default: 'release'
+  flutter-version:
+    description: 'The Flutter version channel or tag to use'
+    required: false
+    default: 'stable'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Java
+      uses: actions/setup-java@v6
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        channel: ${{ inputs.flutter-version }}
+        cache: true
+
+    - name: Get Dependencies
+      shell: bash
+      run: flutter pub get
+
+    - name: Build Application Binary (Standard Flutter)
+      if: ${{ inputs.type == 'flutter build' }}
+      shell: bash
+      run: flutter build ${{ inputs.target }} --${{ inputs.build-mode }}
+
+    - name: Set up Shorebird CLI
+      if: ${{ inputs.type == 'shorebird' }}
+      uses: shorebirdtech/setup-shorebird@v1
+
+    - name: Build & Deploy via Shorebird
+      if: ${{ inputs.type == 'shorebird' }}
+      shell: bash
+      env:
+        SHOREBIRD_TOKEN: ${{ inputs.shorebird-token }}
+      run: shorebird ${{ inputs.shorebird-command }} ${{ inputs.target }}
