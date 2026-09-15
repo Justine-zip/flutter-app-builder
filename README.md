@@ -13,12 +13,13 @@ A custom GitHub Action wrapper that simplifies Flutter CI/CD pipelines. It autom
 
 | Input | Description | Required | Default |
 | :--- | :--- | :---: | :--- |
-| `type` | The build pipeline to use (`flutter build` or `shorebird`) | **Yes** | `'flutter build'` |
-| `target` | Platform compilation target (`apk`, `appbundle`, `ios`, `web`). *Note: Shorebird accepts `android` or `ios`.* | **Yes** | `'apk'` |
+| `type` | The build pipeline to use (`flutter` or `shorebird`) | **Yes** | `'flutter'` |
+| `target` | Platform compilation target (`apk`, `appbundle`, `ios`, `web`). *Only evaluated if type is 'flutter'.* | No | `'apk'` |
 | `build-mode` | Standard Flutter compilation flags (`release`, `debug`, `profile`) | No | `'release'` |
 | `flutter-version`| The target Flutter SDK branch or version channel | No | `'stable'` |
-| `shorebird-command`| The deployment mechanism if using Shorebird (`release` or `patch`) | No | `'release'` |
-| `shorebird-token` | Your authenticated Shorebird token secret. *Required if type is `shorebird`.* | No | `""` |
+| `shorebird-command`| The deployment mechanism (`release` or `patch`). | **Required if type is shorebird** | `""` |
+| `shorebird-target` | The targeted Shorebird engine (`android` or `ios`) | No | `'android'` |
+| `shorebird-token` | Your authenticated Shorebird token secret string. | **Required if type is shorebird** | `""` |
 
 ---
 

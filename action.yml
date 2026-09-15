@@ -6,13 +6,16 @@ branding:
 
 inputs:
   type:
-    description: 'The build type (shorebird, flutter build)'
+    description: 'The build type (shorebird, flutter)'
     required: true
-    default: 'flutter build'
+    default: 'flutter'
   shorebird-command:
     description: 'The Shorebird command to run if type is shorebird (release, patch)'
     required: false
-    default: 'release'
+  shorebird-target:
+    description: 'The Shorebird command target (android, ios)'
+    required: false
+    default: 'android'
   shorebird-token:
     description: 'The SHOREBIRD_TOKEN secret required for authentication'
     required: false
@@ -32,6 +35,19 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Validate Shorebird Inputs
+      if: ${{ inputs.type == 'shorebird' }}
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.shorebird-command }}" ]; then
+          echo "::error::'shorebird-command' is required when type is 'shorebird' (e.g., release, patch)."
+          exit 1
+        fi
+        if [ -z "${{ inputs.shorebird-token }}" ]; then
+          echo "::error::'shorebird-token' is required when type is 'shorebird'."
+          exit 1
+        fi
+
     - name: Set up Java
       uses: actions/setup-java@v6
       with:
@@ -49,7 +65,7 @@ runs:
       run: flutter pub get
 
     - name: Build Application Binary (Standard Flutter)
-      if: ${{ inputs.type == 'flutter build' }}
+      if: ${{ inputs.type == 'flutter' }}
       shell: bash
       run: flutter build ${{ inputs.target }} --${{ inputs.build-mode }}
 
@@ -57,9 +73,16 @@ runs:
       if: ${{ inputs.type == 'shorebird' }}
       uses: shorebirdtech/setup-shorebird@v1
 
-    - name: Build & Deploy via Shorebird
-      if: ${{ inputs.type == 'shorebird' }}
+    - name: Build & Deploy via Shorebird (Android Release APK)
+      if: ${{ inputs.type == 'shorebird' && inputs.shorebird-command == 'release' && inputs.shorebird-target == 'android' }}
       shell: bash
       env:
         SHOREBIRD_TOKEN: ${{ inputs.shorebird-token }}
-      run: shorebird ${{ inputs.shorebird-command }} ${{ inputs.target }}
+      run: shorebird ${{ inputs.shorebird-command }} ${{ inputs.shorebird-target }} --artifact=apk
+
+    - name: Build & Deploy via Shorebird (Fallback)
+      if: ${{ inputs.type == 'shorebird' && !(inputs.shorebird-command == 'release' && inputs.shorebird-target == 'android') }}
+      shell: bash
+      env:
+        SHOREBIRD_TOKEN: ${{ inputs.shorebird-token }}
+      run: shorebird ${{ inputs.shorebird-command }} ${{ inputs.shorebird-target }}
